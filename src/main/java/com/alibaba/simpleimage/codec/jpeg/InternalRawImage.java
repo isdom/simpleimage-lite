@@ -15,6 +15,9 @@
  */
 package com.alibaba.simpleimage.codec.jpeg;
 
+import org.jocean.idiom.pool.BytesPool;
+import org.jocean.idiom.pool.PooledBytesOutputStream;
+
 
 /**
  * TODO Comment of RawImage
@@ -28,10 +31,12 @@ public class InternalRawImage {
     private int            numOfComponents;
     private JPEGColorSpace colorspace;
     private JPEGColorSpace rawColorspace;
-    private byte[]         data;
+//    private byte[]         data;
+    private PooledBytesOutputStream data;
 
-    public void initData() {
-        data = new byte[width * height * numOfComponents];
+    public void initData(final BytesPool pool) {
+        data = new PooledBytesOutputStream(pool);
+        data.setCapacity(width * height * numOfComponents); // new byte[width * height * numOfComponents];
     }
 
     /**
@@ -107,14 +112,14 @@ public class InternalRawImage {
     /**
      * @return the data
      */
-    public byte[] getData() {
+    public PooledBytesOutputStream getData() {
         return data;
     }
 
     /**
      * @param data the data to set
      */
-    public void setData(byte[] data) {
-        this.data = data;
-    }
+//    public void setData(byte[] data) {
+//        this.data = data;
+//    }
 }

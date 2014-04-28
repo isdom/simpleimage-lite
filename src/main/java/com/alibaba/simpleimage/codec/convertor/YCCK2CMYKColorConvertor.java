@@ -15,6 +15,8 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
+import org.jocean.idiom.RandomAccessBytes;
+
 /**
  * TODO Comment of YCCK2CMYKColorConvertor
  * 
@@ -48,11 +50,11 @@ public class YCCK2CMYKColorConvertor extends MapColorConvertor {
      * @see com.alibaba.simpleimage.codec.util.ColorConvertor#convertArray(int[], int, byte[], int)
      */
     @Override
-    public byte[] convertBlock(int[] input, int inPos, byte[] output, int numOfComponents, int startCoordinate,
-                               int row, int scanlineStride) {
+    public void convertBlock(final int[] input, final int inPos, final RandomAccessBytes output, final int numOfComponents, final int startCoordinate,
+                               int row, final int scanlineStride) {
         int index = 0, inputOffset = inPos, bounds = 0;
         int Y, Cb, Cr, K;
-        int len = output.length;
+        int len = output.getCapacity();
 
         for (int i = 0; i < DCTSIZE; i++) {
             index = startCoordinate + i * scanlineStride;
@@ -65,23 +67,30 @@ public class YCCK2CMYKColorConvertor extends MapColorConvertor {
                 K = input[inputOffset++] & 0xFF;
 
                 if (index >= len) {
-                    return output;
+                    return;
                 }
 
                 if (index < bounds) {
-                    output[index++] = (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
-                                                                          - (Y + Cr2R[Cr])]);
-                    output[index++] = (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
-                                                                          - (Y + ((Cb2G[Cb] + Cr2G[Cr]) >> 16))]);
-                    output[index++] = (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
-                                                                          - (Y + Cb2B[Cb])]);
-                    output[index++] = (byte) (255 - K);
+                    output.writeAt(index++, (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
+                                                                          - (Y + Cr2R[Cr])]));
+//                    output[index++] = (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
+//                                                                          - (Y + Cr2R[Cr])]);
+                    output.writeAt(index++, (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
+                                                                          - (Y + ((Cb2G[Cb] + Cr2G[Cr]) >> 16))]));
+//                    output[index++] = (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
+//                                                                          - (Y + ((Cb2G[Cb] + Cr2G[Cr]) >> 16))]);
+                    output.writeAt(index++, (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
+                                                                          - (Y + Cb2B[Cb])]));
+//                    output[index++] = (byte) (255 - sampleRangeLimitTable[sampleRangeLimitOffset + MAXJSAMPLE
+//                                                                          - (Y + Cb2B[Cb])]);
+                    output.writeAt(index++, (byte) (255 - K));
+//                    output[index++] = (byte) (255 - K);
                 }
             }
 
             row++;
         }
 
-        return output;
+//        return output;
     }
 }

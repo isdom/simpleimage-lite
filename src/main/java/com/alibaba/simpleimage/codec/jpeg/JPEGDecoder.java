@@ -29,8 +29,12 @@ package com.alibaba.simpleimage.codec.jpeg;
 //import java.awt.image.WritableRaster;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 
+import org.jocean.idiom.Blob;
+import org.jocean.idiom.RandomAccessBytes;
 import org.jocean.idiom.Triple;
+import org.jocean.idiom.pool.BytesPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +74,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
     private InverseDCTCalculator inverseDCTCalculator;
     private ColorConvertor       colorConvertor;
 
+    private final BytesPool      _bytesPool;
     private InternalRawImage     rawImage;                                    //
 
     // Runtime var frame level
@@ -95,7 +100,8 @@ public class JPEGDecoder extends AbstractImageDecoder {
     private boolean              supportICC        = false;
     private boolean              broken            = false;                   // indicate the image is broken or not
 
-    public JPEGDecoder(ImageInputStream in, boolean fastIDCTMode, boolean supportICC){
+    public JPEGDecoder(final BytesPool pool, ImageInputStream in, boolean fastIDCTMode, boolean supportICC){
+        this._bytesPool = pool;
         this.in = in;
         this.fastIDCTMode = fastIDCTMode;
         this.supportICC = supportICC;
@@ -114,11 +120,11 @@ public class JPEGDecoder extends AbstractImageDecoder {
         }
     }
 
-    public JPEGDecoder(ImageInputStream in){
-        this(in, false, false);
+    public JPEGDecoder(final BytesPool pool, ImageInputStream in){
+        this(pool, in, false, false);
     }
 
-    public Triple<Integer, Integer, int[]> decode() throws IOException {
+    public Triple<Integer, Integer, int[]> decode() throws Exception {
         int prefix = in.read();
         int magic = in.read();
 
@@ -160,7 +166,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
         }
     }
 
-    private Triple<Integer, Integer, int[]> createImage() {
+    private Triple<Integer, Integer, int[]> createImage() throws Exception {
         
         if (frameHeader.isProgressiveMode()) {
             inverseDCT();
@@ -176,6 +182,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
 //
 //            cs = getColorSpace();
             LOG.warn("createImage: gray colorspace, skip");
+            rawImage.getData().close();
             return null;
         } else if (rawImage.getColorspace() == JPEGColorSpace.RGB) {
 //            dstRaster = Raster.createInterleavedRaster(
@@ -187,7 +194,15 @@ public class JPEGDecoder extends AbstractImageDecoder {
             if ( LOG.isInfoEnabled() ) {
                 LOG.info("createImage: RGB colorspace, decode succeed");
             }
-            return Triple.of(rawImage.getWidth(), rawImage.getHeight(), RGBToARGB(rawImage.getData()));
+            final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
+            try {
+                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), RGBToARGB(is));
+            }
+            finally {
+                if ( null != is ) {
+                    is.close();
+                }
+            }
         } else if (rawImage.getColorspace() == JPEGColorSpace.CMYK) {
 //            dstRaster = Raster.createInterleavedRaster(
 //                                                       new DataBufferByte(rawImage.getData(), rawImage.getData().length),
@@ -196,31 +211,38 @@ public class JPEGDecoder extends AbstractImageDecoder {
             if ( LOG.isInfoEnabled() ) {
                 LOG.info("createImage: CMYK colorspace, decode succeed");
             }
-            return Triple.of(rawImage.getWidth(), rawImage.getHeight(), CMYK2ARGB(rawImage.getData()));
-
+            final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
+            try {
+                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), CMYK2ARGB(is));
+            }
+            finally {
+                if ( null != is ) {
+                    is.close();
+                }
+            }
         } else {
             throw new JPEGDecoderException("Unknow colorspace");
         }
     }
     
-    private static float CMYK(final byte cmyk) {
-        final int INT = cmyk < 0 ? 255 + (int)cmyk : cmyk;
+    private static float CMYK(final int cmyk) {
+//        final int INT = cmyk < 0 ? 255 + cmyk : cmyk;
         
-        return (float)INT / 255.0f;
+        return (float)cmyk / 255.0f;
     }
     
-    private int[] CMYK2ARGB(final byte[] data) {
+    private int[] CMYK2ARGB(final InputStream is) throws Exception {
 //        R = 255 × (1-C) × (1-K)
 //        The green color (G) is calculated from the magenta (M) and black (K) colors:
 //        G = 255 × (1-M) × (1-K)
 //        The blue color (B) is calculated from the yellow (Y) and black (K) colors:
 //        B = 255 × (1-Y) × (1-K)
-        final int[] ret = new int[data.length / 4];
+        final int[] ret = new int[is.available() / 4];
         for ( int idx = 0; idx < ret.length; idx++) {
-            final float C = CMYK(data[idx*4]);
-            final float M = CMYK(data[idx*4+1]);
-            final float Y = CMYK(data[idx*4+2]);
-            final float K = CMYK(data[idx*4+3]);
+            final float C = CMYK(is.read());
+            final float M = CMYK(is.read());
+            final float Y = CMYK(is.read());
+            final float K = CMYK(is.read());
             final int R = (int)(255 * (1-C) * (1-K)) & 0xff;
             final int G = (int)(255 * (1-M) * (1-K)) & 0xff;
             final int B = (int)(255 * (1-Y) * (1-K)) & 0xff;
@@ -230,10 +252,13 @@ public class JPEGDecoder extends AbstractImageDecoder {
         return ret;
     }
 
-    private int[] RGBToARGB(final byte[] data) {
-        final int[] ret = new int[data.length / 3];
+    private int[] RGBToARGB(final InputStream is) throws Exception {
+        final int[] ret = new int[is.available() / 3];
         for ( int idx = 0; idx < ret.length; idx++) {
-            ret[idx] = 0xff000000 | ( ((data[idx * 3] & 0xff) << 16) | ((data[idx * 3+1] & 0xff) << 8) | (data[idx * 3+2] & 0xff) );
+            int r = is.read();
+            int g = is.read();
+            int b = is.read();
+            ret[idx] = 0xff000000 | ( ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff) );
         }
         return ret;
     }
@@ -1123,7 +1148,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
         rawImage.setHeight(frameHeader.getY());
         rawImage.setWidth(frameHeader.getX());
         rawImage.setNumOfComponents(frameHeader.getNf());
-        rawImage.initData();
+        rawImage.initData(this._bytesPool);
 
         preDC = new int[frameHeader.getNf()];
 
@@ -1184,7 +1209,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
      * Used by progressive mode
      */
     protected void writeFull() {
-        byte[] imageData = rawImage.getData();
+        RandomAccessBytes imageData = rawImage.getData();
         int numOfComponents = frameHeader.getNf();
         int[] pixes = new int[numOfComponents * DCTSIZE2];
         int blockIndex = 0;
@@ -1248,7 +1273,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
     }
 
     protected void writeMCU() {
-        byte[] imageData = rawImage.getData();
+        RandomAccessBytes imageData = rawImage.getData();
         int numOfComponents = frameHeader.getNf();
         int blockIndex = 0;
         int startCoordinate = 0, row = 0, scanlineStride = numOfComponents * rawImage.getWidth();

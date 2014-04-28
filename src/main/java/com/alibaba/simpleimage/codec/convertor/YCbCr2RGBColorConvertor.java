@@ -15,6 +15,8 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
+import org.jocean.idiom.RandomAccessBytes;
+
 /**
  * TODO Comment of YCbCr2RGBColorConvertor
  * 
@@ -45,11 +47,11 @@ public class YCbCr2RGBColorConvertor extends MapColorConvertor {
      * @see com.alibaba.simpleimage.codec.util.ColorConvertor#convertArray(int[], int, byte[], int)
      */
     @Override
-    public byte[] convertBlock(int[] input, int inPos, byte[] output, int numOfComponents, int startCoordinate,
-                               int row, int scanlineStride) {
+    public void convertBlock(final int[] input, final int inPos, final RandomAccessBytes output, final int numOfComponents, final int startCoordinate,
+                               int row, final int scanlineStride) {
         int index = 0, inputOffset = 0, bounds = 0;
         int Y, Cb, Cr;
-        int len = output.length;
+        int len = output.getCapacity();
 
         for (int i = 0; i < DCTSIZE; i++) {
             index = startCoordinate + i * scanlineStride;
@@ -61,20 +63,24 @@ public class YCbCr2RGBColorConvertor extends MapColorConvertor {
                 Cr = input[inputOffset++] & 0xFF;
 
                 if (index >= len) {
-                    return output;
+                    return;
                 }
 
                 if (index < bounds) {
-                    output[index++] = (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y + Cr2R[Cr]];
-                    output[index++] = (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y
-                                                                   + ((Cb2G[Cb] + Cr2G[Cr]) >> 16)];
-                    output[index++] = (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y + Cb2B[Cb]];
+                    output.writeAt(index++, (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y + Cr2R[Cr]]);
+//                    output[index++] = (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y + Cr2R[Cr]];
+                    output.writeAt(index++, (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y
+                                                              + ((Cb2G[Cb] + Cr2G[Cr]) >> 16)]);
+//                    output[index++] = (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y
+//                                                                   + ((Cb2G[Cb] + Cr2G[Cr]) >> 16)];
+                    output.writeAt(index++, (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y + Cb2B[Cb]]);
+//                    output[index++] = (byte) sampleRangeLimitTable[sampleRangeLimitOffset + Y + Cb2B[Cb]];
                 }
             }
 
             row++;
         }
 
-        return output;
+//        return output;
     }
 }

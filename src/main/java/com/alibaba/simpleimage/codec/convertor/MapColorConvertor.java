@@ -15,6 +15,8 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
+import org.jocean.idiom.RandomAccessBytes;
+
 /**
  * @author wendell
  */
@@ -54,6 +56,6 @@ public abstract class MapColorConvertor implements ColorConvertor {
      * (non-Javadoc)
      * @see com.alibaba.simpleimage.codec.util.ColorConvertor#convertArray(int[], int, byte[], int)
      */
-    public abstract byte[] convertBlock(int[] input, int inPos, byte[] output, int numOfComponents,
+    public abstract void convertBlock(int[] input, int inPos, RandomAccessBytes output, int numOfComponents,
                                         int startCoordinate, int row, int scanlineStride);
 }

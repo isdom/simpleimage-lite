@@ -15,6 +15,8 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
+import org.jocean.idiom.RandomAccessBytes;
+
 /**
  * TODO Comment of InverseColorConvertor
  * 
@@ -34,10 +36,10 @@ public class InverseColorConvertor implements ColorConvertor {
      * (non-Javadoc)
      * @see com.alibaba.simpleimage.codec.util.ColorConvertor#convertBlock(int[], int, byte[], int, int, int)
      */
-    public byte[] convertBlock(int[] input, int inPos, byte[] output, int numOfComponents, int startCoordinate,
-                               int row, int scanlineStride) {
+    public void convertBlock(final int[] input, int inPos, final RandomAccessBytes output, final int numOfComponents, final int startCoordinate,
+                               int row, final int scanlineStride) {
         int index = 0, inputOffset = 0, bounds = 0;
-        int len = output.length;
+        int len = output.getCapacity();
 
         for (int i = 0; i < DCTSIZE; i++) {
             index = startCoordinate + i * scanlineStride;
@@ -45,12 +47,13 @@ public class InverseColorConvertor implements ColorConvertor {
 
             for (int j = 0; j < DCTSIZE; j++) {
                 if (index >= len) {
-                    return output;
+                    return;
                 }
 
                 if (index < bounds) {
                     for (int c = 0; c < numOfComponents; c++) {
-                        output[index++] = (byte) (255 - (input[inputOffset++] & 0xFF));
+                        output.writeAt(index++, (byte) (255 - (input[inputOffset++] & 0xFF)));
+//                        output[index++] = (byte) (255 - (input[inputOffset++] & 0xFF));
                     }
                 } else {
                     inputOffset += numOfComponents;
@@ -60,7 +63,7 @@ public class InverseColorConvertor implements ColorConvertor {
             row++;
         }
 
-        return output;
+//        return output;
     }
 
 }
