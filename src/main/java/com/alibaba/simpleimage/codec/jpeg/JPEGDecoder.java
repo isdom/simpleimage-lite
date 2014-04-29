@@ -33,8 +33,12 @@ import java.io.InputStream;
 
 import org.jocean.idiom.Blob;
 import org.jocean.idiom.Triple;
+import org.jocean.idiom.block.BlockUtils;
+import org.jocean.idiom.block.IntsBlob;
 import org.jocean.idiom.block.RandomAccessBytes;
+import org.jocean.idiom.block.WriteableInts;
 import org.jocean.idiom.pool.BytesPool;
+import org.jocean.idiom.pool.IntsPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +128,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
         this(pool, in, false, false);
     }
 
-    public Triple<Integer, Integer, int[]> decode() throws Exception {
+    public Triple<Integer, Integer, IntsBlob> decode(final IntsPool intsPool) throws Exception {
         int prefix = in.read();
         int magic = in.read();
 
@@ -160,13 +164,13 @@ public class JPEGDecoder extends AbstractImageDecoder {
                 broken = true;
             }
             
-            return createImage();
+            return createImage(intsPool);
         } else {
             throw new JPEGDecoderException("Decode JPEG fail");
         }
     }
 
-    private Triple<Integer, Integer, int[]> createImage() throws Exception {
+    private Triple<Integer, Integer, IntsBlob> createImage(final IntsPool intsPool) throws Exception {
         
         if (frameHeader.isProgressiveMode()) {
             inverseDCT();
@@ -196,7 +200,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             }
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             try {
-                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), RGBToARGB(is));
+                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), RGBToARGB(is, intsPool));
             }
             finally {
                 if ( null != is ) {
@@ -213,7 +217,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             }
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             try {
-                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), CMYK2ARGB(is));
+                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), CMYK2ARGB(is, intsPool));
             }
             finally {
                 if ( null != is ) {
@@ -231,14 +235,15 @@ public class JPEGDecoder extends AbstractImageDecoder {
         return (float)cmyk / 255.0f;
     }
     
-    private int[] CMYK2ARGB(final InputStream is) throws Exception {
+    private IntsBlob CMYK2ARGB(final InputStream is, final IntsPool pool) throws Exception {
 //        R = 255 × (1-C) × (1-K)
 //        The green color (G) is calculated from the magenta (M) and black (K) colors:
 //        G = 255 × (1-M) × (1-K)
 //        The blue color (B) is calculated from the yellow (Y) and black (K) colors:
 //        B = 255 × (1-Y) × (1-K)
-        final int[] ret = new int[is.available() / 4];
-        for ( int idx = 0; idx < ret.length; idx++) {
+//        final int[] ret = new int[is.available() / 4];
+        final WriteableInts ints = BlockUtils.createWriteableInts(pool);
+        while ( is.available() > 0 ) {
             final float C = CMYK(is.read());
             final float M = CMYK(is.read());
             final float Y = CMYK(is.read());
@@ -247,20 +252,21 @@ public class JPEGDecoder extends AbstractImageDecoder {
             final int G = (int)(255 * (1-M) * (1-K)) & 0xff;
             final int B = (int)(255 * (1-Y) * (1-K)) & 0xff;
             
-            ret[idx] = 0xff000000 | ( R  << 16) | ( G << 8 ) | B;
+            ints.write( 0xff000000 | ( R  << 16) | ( G << 8 ) | B);
         }
-        return ret;
+        return ints.drainToIntsBlob();
     }
 
-    private int[] RGBToARGB(final InputStream is) throws Exception {
-        final int[] ret = new int[is.available() / 3];
-        for ( int idx = 0; idx < ret.length; idx++) {
+    private IntsBlob RGBToARGB(final InputStream is, final IntsPool pool) throws Exception {
+//        final int[] ret = new int[is.available() / 3];
+        final WriteableInts ints = BlockUtils.createWriteableInts(pool);
+        while ( is.available() > 0 ) {
             int r = is.read();
             int g = is.read();
             int b = is.read();
-            ret[idx] = 0xff000000 | ( ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff) );
+            ints.write(0xff000000 | ( ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff) ));
         }
-        return ret;
+        return ints.drainToIntsBlob();
     }
 
     /*
