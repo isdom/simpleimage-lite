@@ -31,8 +31,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.jocean.idiom.Blob;
 import org.jocean.idiom.Triple;
+import org.jocean.idiom.block.Blob;
 import org.jocean.idiom.block.BlockUtils;
 import org.jocean.idiom.block.IntsBlob;
 import org.jocean.idiom.block.RandomAccessBytes;
