@@ -15,7 +15,7 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
-import org.jocean.idiom.RandomAccessBytes;
+import org.jocean.idiom.block.RandomAccessBytes;
 
 import com.alibaba.simpleimage.codec.jpeg.CalculateConsts;
 

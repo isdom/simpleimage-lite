@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.jocean.idiom.Blob;
-import org.jocean.idiom.RandomAccessBytes;
 import org.jocean.idiom.Triple;
+import org.jocean.idiom.block.RandomAccessBytes;
 import org.jocean.idiom.pool.BytesPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

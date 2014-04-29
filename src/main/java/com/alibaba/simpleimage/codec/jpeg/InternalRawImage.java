@@ -15,8 +15,8 @@
  */
 package com.alibaba.simpleimage.codec.jpeg;
 
+import org.jocean.idiom.block.PooledBytesOutputStream;
 import org.jocean.idiom.pool.BytesPool;
-import org.jocean.idiom.pool.PooledBytesOutputStream;
 
 
 /**
