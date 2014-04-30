@@ -15,7 +15,8 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
-import org.jocean.idiom.block.RandomAccessBytes;
+import org.jocean.idiom.block.DynamicArrayBytes;
+
 
 /**
  * TODO Comment of InverseColorConvertor
@@ -36,7 +37,7 @@ public class InverseColorConvertor implements ColorConvertor {
      * (non-Javadoc)
      * @see com.alibaba.simpleimage.codec.util.ColorConvertor#convertBlock(int[], int, byte[], int, int, int)
      */
-    public void convertBlock(final int[] input, int inPos, final RandomAccessBytes output, final int numOfComponents, final int startCoordinate,
+    public void convertBlock(final int[] input, int inPos, final DynamicArrayBytes output, final int numOfComponents, final int startCoordinate,
                                int row, final int scanlineStride) {
         int index = 0, inputOffset = 0, bounds = 0;
         int len = output.getCapacity();

@@ -34,8 +34,8 @@ import java.io.InputStream;
 import org.jocean.idiom.Triple;
 import org.jocean.idiom.block.Blob;
 import org.jocean.idiom.block.BlockUtils;
+import org.jocean.idiom.block.DynamicArrayBytes;
 import org.jocean.idiom.block.IntsBlob;
-import org.jocean.idiom.block.RandomAccessBytes;
 import org.jocean.idiom.block.WriteableInts;
 import org.jocean.idiom.pool.BytesPool;
 import org.jocean.idiom.pool.IntsPool;
@@ -1215,7 +1215,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
      * Used by progressive mode
      */
     protected void writeFull() {
-        RandomAccessBytes imageData = rawImage.getData();
+        final DynamicArrayBytes imageData = rawImage.getData();
         int numOfComponents = frameHeader.getNf();
         int[] pixes = new int[numOfComponents * DCTSIZE2];
         int blockIndex = 0;
@@ -1279,7 +1279,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
     }
 
     protected void writeMCU() {
-        RandomAccessBytes imageData = rawImage.getData();
+        final DynamicArrayBytes imageData = rawImage.getData();
         int numOfComponents = frameHeader.getNf();
         int blockIndex = 0;
         int startCoordinate = 0, row = 0, scanlineStride = numOfComponents * rawImage.getWidth();

@@ -15,7 +15,7 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
-import org.jocean.idiom.block.RandomAccessBytes;
+import org.jocean.idiom.block.DynamicArrayBytes;
 
 /**
  * TODO Comment of YCCK2CMYKColorConvertor
@@ -50,7 +50,7 @@ public class YCCK2CMYKColorConvertor extends MapColorConvertor {
      * @see com.alibaba.simpleimage.codec.util.ColorConvertor#convertArray(int[], int, byte[], int)
      */
     @Override
-    public void convertBlock(final int[] input, final int inPos, final RandomAccessBytes output, final int numOfComponents, final int startCoordinate,
+    public void convertBlock(final int[] input, final int inPos, final DynamicArrayBytes output, final int numOfComponents, final int startCoordinate,
                                int row, final int scanlineStride) {
         int index = 0, inputOffset = inPos, bounds = 0;
         int Y, Cb, Cr, K;

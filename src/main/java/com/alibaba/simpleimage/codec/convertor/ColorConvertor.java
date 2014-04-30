@@ -15,7 +15,7 @@
  */
 package com.alibaba.simpleimage.codec.convertor;
 
-import org.jocean.idiom.block.RandomAccessBytes;
+import org.jocean.idiom.block.DynamicArrayBytes;
 
 import com.alibaba.simpleimage.codec.jpeg.CalculateConsts;
 
@@ -24,7 +24,7 @@ import com.alibaba.simpleimage.codec.jpeg.CalculateConsts;
  */
 public interface ColorConvertor extends CalculateConsts {
 
-    public abstract void convertBlock(int[] input, int inPos, RandomAccessBytes output, int numOfComponents,
+    public abstract void convertBlock(int[] input, int inPos, DynamicArrayBytes output, int numOfComponents,
                                         int startCoordinate, int row, int scanlineStride);
 
     public long convert(int[] input, int inPos);
