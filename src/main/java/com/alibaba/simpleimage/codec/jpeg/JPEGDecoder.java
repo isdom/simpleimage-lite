@@ -31,7 +31,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.jocean.idiom.Triple;
 import org.jocean.idiom.block.Blob;
 import org.jocean.idiom.block.BlockUtils;
 import org.jocean.idiom.block.DynamicArrayBytes;
@@ -39,6 +38,7 @@ import org.jocean.idiom.block.IntsBlob;
 import org.jocean.idiom.block.WriteableInts;
 import org.jocean.idiom.pool.BytesPool;
 import org.jocean.idiom.pool.IntsPool;
+import org.jocean.image.RawImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +128,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
         this(pool, in, false, false);
     }
 
-    public Triple<Integer, Integer, IntsBlob> decode(final IntsPool intsPool) throws Exception {
+    public RawImage decode(final IntsPool intsPool) throws Exception {
         int prefix = in.read();
         int magic = in.read();
 
@@ -170,7 +170,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
         }
     }
 
-    private Triple<Integer, Integer, IntsBlob> createImage(final IntsPool intsPool) throws Exception {
+    private RawImage createImage(final IntsPool intsPool) throws Exception {
         
         if (frameHeader.isProgressiveMode()) {
             inverseDCT();
@@ -200,7 +200,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             }
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             try {
-                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), RGBToARGB(is, intsPool));
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), RGBToARGB(is, intsPool));
             }
             finally {
                 if ( null != is ) {
@@ -217,7 +217,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             }
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             try {
-                return Triple.of(rawImage.getWidth(), rawImage.getHeight(), CMYK2ARGB(is, intsPool));
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), CMYK2ARGB(is, intsPool));
             }
             finally {
                 if ( null != is ) {
