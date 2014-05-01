@@ -199,12 +199,16 @@ public class JPEGDecoder extends AbstractImageDecoder {
                 LOG.info("createImage: RGB colorspace, decode succeed");
             }
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
+            final IntsBlob ints =  RGBToARGB(is, intsPool);
             try {
-                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), RGBToARGB(is, intsPool));
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints);
             }
             finally {
                 if ( null != is ) {
                     is.close();
+                }
+                if ( null != ints ) {
+                    ints.release();
                 }
             }
         } else if (rawImage.getColorspace() == JPEGColorSpace.CMYK) {
@@ -216,12 +220,16 @@ public class JPEGDecoder extends AbstractImageDecoder {
                 LOG.info("createImage: CMYK colorspace, decode succeed");
             }
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
+            final IntsBlob ints =  CMYK2ARGB(is, intsPool);
             try {
-                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), CMYK2ARGB(is, intsPool));
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints);
             }
             finally {
                 if ( null != is ) {
                     is.close();
+                }
+                if ( null != ints ) {
+                    ints.release();
                 }
             }
         } else {
