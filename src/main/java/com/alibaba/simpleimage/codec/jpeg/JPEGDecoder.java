@@ -201,7 +201,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             final IntsBlob ints =  RGBToARGB(is, intsPool);
             try {
-                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints);
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints, false);
             }
             finally {
                 if ( null != is ) {
@@ -222,7 +222,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             final IntsBlob ints =  CMYK2ARGB(is, intsPool);
             try {
-                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints);
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints, false);
             }
             finally {
                 if ( null != is ) {
