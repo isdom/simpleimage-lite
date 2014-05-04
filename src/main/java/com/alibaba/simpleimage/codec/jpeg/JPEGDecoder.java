@@ -30,6 +30,7 @@ package com.alibaba.simpleimage.codec.jpeg;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.jocean.idiom.block.Blob;
 import org.jocean.idiom.block.BlockUtils;
@@ -128,7 +129,8 @@ public class JPEGDecoder extends AbstractImageDecoder {
         this(pool, in, false, false);
     }
 
-    public RawImage decode(final IntsPool intsPool) throws Exception {
+    public RawImage decode(final IntsPool intsPool, final Map<String, Object> properties) 
+            throws Exception {
         int prefix = in.read();
         int magic = in.read();
 
@@ -164,13 +166,14 @@ public class JPEGDecoder extends AbstractImageDecoder {
                 broken = true;
             }
             
-            return createImage(intsPool);
+            return createImage(intsPool, properties);
         } else {
             throw new JPEGDecoderException("Decode JPEG fail");
         }
     }
 
-    private RawImage createImage(final IntsPool intsPool) throws Exception {
+    private RawImage createImage(final IntsPool intsPool,final Map<String, Object> properties) 
+            throws Exception {
         
         if (frameHeader.isProgressiveMode()) {
             inverseDCT();
@@ -201,7 +204,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             final IntsBlob ints =  RGBToARGB(is, intsPool);
             try {
-                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints, false);
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints, false, properties);
             }
             finally {
                 if ( null != is ) {
@@ -222,7 +225,7 @@ public class JPEGDecoder extends AbstractImageDecoder {
             final InputStream is = Blob.Utils.releaseAndGenInputStream( rawImage.getData().drainToBlob() );
             final IntsBlob ints =  CMYK2ARGB(is, intsPool);
             try {
-                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints, false);
+                return new RawImage(rawImage.getWidth(), rawImage.getHeight(), ints, false, properties);
             }
             finally {
                 if ( null != is ) {
